@@ -2,6 +2,52 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import KFold
+from sklearn.inspection import permutation_importance
+
+
+def prep_for_rf(colname, df, colsub = 5):
+    fillmean = lambda col: col.fillna(col.mean())
+    df2 = df.copy()
+    df2 = df2.dropna(subset = [colname], axis = 0).reset_index(drop = True)
+    if isinstance(colsub, str):
+        X = df2[df2.columns.drop(list(df2.filter(regex=colsub)))]
+        X = X.reset_index(drop = True)
+        
+    X = X.drop(['index'], axis = 1)
+    X = X.apply(fillmean)
+    y = df2[colname]
+    return(X, y)
+
+def run_modelskfold(function, X, y, kfoldn = 10, n_rep = 5, pi_bool = True):
+
+    kf = KFold(n_splits=kfoldn,shuffle=True)
+    # Initialize the accuracy of the models to blank list. The accuracy of each model will be appended to this list
+    accuracy_model = []
+    mse_ = []
+    per_imps = []
+    # Iterate over each train-test split
+    for train_index, test_index in kf.split(X):
+        # Split train-test
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        # Train the model
+        model = function.fit(X_train, y_train)
+    # Append to accuracy_model the accuracyof the model
+        accuracy_model.append(mean_absolute_error(y_test, model.predict(X_test)))
+        mse_.append(mean_squared_error(y_test, model.predict(X_test)))
+        if pi_bool == True:
+            result = permutation_importance(function, X_test, y_test, n_repeats=5,
+                                random_state=42, n_jobs=2)
+            sorted_idx = result.importances_mean.argsort()
+            perm_imp = pd.DataFrame(result.importances[sorted_idx].T)
+            perm_imp.columns = X_test.columns[sorted_idx]
+            perm_imp = perm_imp.T.rename_axis("labels")
+            perm_imp['importance'] = perm_imp.mean(axis = 1)
+            perm_imp = perm_imp.reset_index()
+            
+            per_imps.append(perm_imp)
+    return([accuracy_model, mse_, per_imps])
 
 def run_each_participant(function, X, y, feat_bool = True):
     '''

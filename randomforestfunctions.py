@@ -44,7 +44,7 @@ def prep_for_rf(response_col, df, colsub = 5, nested = 5):
     y = df2[response_col]
     return(X, y)
 
-def run_modelskfold(function, X, y, kfoldn = 10, n_rep = 5, pi_bool = True):
+def run_models_kfold(function, X, y, kfoldn = 10, n_rep = 15, pi_bool = True):
     '''
     INPUT:
     scikit rf regressor model, x vals, y vals, number of kfold splits, # of permutations,
@@ -65,24 +65,20 @@ def run_modelskfold(function, X, y, kfoldn = 10, n_rep = 5, pi_bool = True):
             
       
     '''
-    kf = KFold(n_splits=kfoldn,shuffle=True)
+    kf = KFold(n_splits=kfoldn,shuffle=True, random_state = 15)
     mae_ = []
     mse_ = []
     per_imps = []
-    # Iterate over each train-test split
     for train_index, test_index in kf.split(X):
-        # Split train-test
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-        # Train the model
         model = function.fit(X_train, y_train)
-    # Append to accuracy_model the accuracy of the model
         mae_.append(mean_absolute_error(y_test, model.predict(X_test)))
         mse_.append(mean_squared_error(y_test, model.predict(X_test)))
    
         if pi_bool == True:
             result = permutation_importance(function, X_test, y_test, n_repeats=n_rep,
-                                random_state=42, n_jobs=2)
+                                random_state=15, n_jobs=2)
             sorted_idx = result.importances_mean.argsort()
             perm_imp = pd.DataFrame(result.importances[sorted_idx].T)
             perm_imp.columns = X_test.columns[sorted_idx]
@@ -141,7 +137,7 @@ def specify_best(model, X, y, typ = 'RF'):
     best parameter values for min samples split, max features, or kernel gamma and C
     '''
     if typ == 'RF':
-        params =  {'min_samples_split': np.arange(2, 100, 10), 'max_features': np.arange(2,15,2)}
+        params =  {'min_samples_split': np.arange(2, 100, 20), 'max_features': np.arange(2,15,4)}
     elif typ == 'svr':
          params =  {'kernel': ['rbf', 'linear', 'sigmoid'], 'gamma': np.arange(0.001,0.9,0.1), 'C': [0.0001,0.01,1,10,100]}
     clf = GridSearchCV(model, params,cv = 5)
@@ -199,6 +195,13 @@ def top_features(feat_imps, featn = 15, mean = False):
     return(top_feat_df)
     
 def print_vals(best_param, run_list, top_feat_df):
+    '''
+    INPUT:
+    set of results from above functions
+    
+    OUTPUT:
+    prints them into notebook to give an initial idea of what results are (not intended to be final form)
+    '''
     print('mss: ' + str(best_param.get('min_samples_split')))
     print('max_feat: ' + str(best_param.get('max_features')))
     print('mean_mae: ' + str(np.mean(run_list[0])))

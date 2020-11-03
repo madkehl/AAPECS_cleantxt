@@ -4,7 +4,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import KFold
 from sklearn.inspection import permutation_importance
-
+import numpy as np
 
 def prep_for_rf(response_col, df, colsub = 5, nested = 5):
     '''

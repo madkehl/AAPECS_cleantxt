@@ -40,10 +40,11 @@ def convert_to_spacy(series):
 def get_thetas(vec_ls, randomize=False):
     result_ls = []
     clean_vec = vec_ls.dropna()
+    print(vec_ls)
     if randomize is True:
         if len(vec_ls) > 1:
             vec_ls_rand = random.sample(list(vec_ls), k=len(vec_ls))
-            clean_vec_ls = [np.dot(t, s) / (LA.norm(t) * LA.norm(s)) for s, t in zip(vec_ls_rand, vec_ls_rand[1:])]
+            clean_vec_ls = [np.dot(t, s) / (LA.norm(t) * LA.norm(s)) if (s is not None and t is not None) else None for s, t in zip(vec_ls_rand, vec_ls_rand[1:])]
         else:
             clean_vec_ls = None
     else:

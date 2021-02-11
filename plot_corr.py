@@ -14,6 +14,7 @@ def get_subset(corr, substring):
     df = corr[(corr['column'].str.contains(substring)) & (corr['row'] != 'catRigidity')]
     df = df[~df['row'].str.contains('Var')]
     df = df[~df['row'].str.contains('med')]
+    df = df[df['p'] <= 0.15]
     return df
 
 

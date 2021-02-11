@@ -87,9 +87,8 @@ def multiplot(substring):
                                      )))
 
     fig.update_layout(
-        title=substring,
+        title="Variation x Baseline Traits" + substring.capitalize(),
         xaxis_title="Baseline Traits",
         yaxis_title="Correlation with Larger Variation")
     return fig
 
-multiplot('swv')
